@@ -79,6 +79,12 @@ functions:
       - http: ANY /
       - http: 'ANY {proxy+}'
   # lambda function BBVA PyME Scraping getDataFromInegi
+  getDataGeo:
+    handler: stepFunctionsHandler.getDataGeo
+    name: pyme-state-machine-scraping-getDataGeo
+    description: BBVA PyME Scraping getDataGeo
+    timeout: 100 #
+  # lambda function BBVA PyME Scraping getDataFromInegi
   getDataFromGoogle:
     handler: stepFunctionsHandler.getDataFromGoogle
     name: pyme-state-machine-scraping-getDataFromGoogle
@@ -112,9 +118,18 @@ stepFunctions:
       name: ${self:custom.bbvaPyMEScrapingStateMachine}
       definition:
         Comment: "BBVA PyME Scraping StateMachine - Step Functions"
-        StartAt: getDataFromGoogle
+        StartAt: getDataGeo
         # TimeoutSeconds: 1500
         States:
+          getDataGeo:
+              Type: Task
+              Resource:
+                Fn::GetAtt: [ getDataGeo, Arn ]
+              Catch: [ {
+                ErrorEquals: [ States.TaskFailed ],
+                Next: fallback
+              } ]
+              Next: getDataFromGoogle
             getDataFromGoogle:
               Type: Task
               Resource:
