@@ -67,6 +67,46 @@ exports.getItem = (params) => {
 
 }
 
+//Scan all items in a database TableName
+/*
+*/
+exports.scan = (params) => {
+  loadKeys();
+
+  return new Promise((resolve, reject) => {
+    docClient.scan(params, (err, data) => {
+      if (err) {
+        reject(err);
+      }
+      resolve(data);
+    });
+  });
+}
+
+//Get all items in a database TableName without params
+exports.getAll = (table) => {
+  loadKeys();
+  let params = {
+    TableName: table
+  };
+
+  return new Promise((resolve, reject) => {
+
+    docClient.scan(params, (err, data) => {
+
+      if (err) {
+        reject(err);
+      }
+
+      resolve(data);
+
+    });
+
+
+  });
+
+};
+
 //Update an Item
 exports.updateItem = (params) => {
   loadKeys();
@@ -87,21 +127,12 @@ exports.updateItem = (params) => {
 };
 
 async function loadKeys() {
-  AWS.config = new AWS.Config();
-
-  if (process.env.DMC_ENV && process.env.DMC_ENV == 'LOCAL') {
-    // console.log(' **************** ENV LOCAL - loading aws profile **************');
-    let credentials = new AWS.SharedIniFileCredentials({
-      profile: process.env.LOCAL_AWSPROFILE,
-      filename: process.env.LOCAL_AWSFILENAME
-    });
-    AWS.config.credentials = credentials;
-  }
+/*  AWS.config = new AWS.Config();
 
   AWS.config.update({
     region: 'us-east-1'
   });
-
+*/
   docClient = new AWS.DynamoDB.DocumentClient();
   dynamodb = new AWS.DynamoDB();
 }

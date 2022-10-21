@@ -3,7 +3,7 @@ const {
     getQuery
   } = require('../controllers/utils');
 
-const athenaService = require('../services/athena');
+const dynamoService = require('../services/dynamo');
 
 const getDataFromInegi = (params) => {
     console.log("getDataFromInegi():params", params);

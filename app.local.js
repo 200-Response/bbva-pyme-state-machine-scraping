@@ -8,8 +8,7 @@ const port = 3088
 process.env.LOCAL_AWSPROFILE = 'bbva2022';
 process.env.LOCAL_AWSFILENAME = homedir+'/.aws/credentials';
 
-process.env.DIS_GA_TABLE = 'dis-ga-reporting';
-
+/*
 var credentials = new AWS.SharedIniFileCredentials({
 	profile: process.env.LOCAL_AWSPROFILE,
 	filename: process.env.LOCAL_AWSFILENAME
@@ -18,6 +17,25 @@ AWS.config.credentials = credentials;
 AWS.config.update({
 	region: 'us-east-1'
 });
+*/
+
+AWS.config.loadFromPath('./config.json');
 
 app.listen(port);
 console.log(`listening on http://localhost:${port}`);
+
+
+const dynamoService = require('./services/dynamo');
+
+const getDataFromDynamoDB = async () => {
+
+    await dynamoService.getAll('pyme-dataset')
+        .then(async result => {
+            console.log(result);
+        })
+        .catch(error => {
+            console.log("error on getAll: ",error);
+        });
+};
+
+getDataFromDynamoDB();
