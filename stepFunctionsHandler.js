@@ -17,6 +17,27 @@ exports.cronTrigger = async (event, context, callback) => {
   return {};
 };
 
+exports.getDataGeo = (event) => {
+  console.log('method:getDataGeo()');
+  return new Promise((resolve, reject) => {
+    console.log('method:getDataGeo():step:executing:getDataGeo');
+    
+    const { getDataGeo } = require(`./stepFunctions/getDataGeo`);
+    
+    return getDataGeo(event)
+      .then(async (fromResolve) => {
+        console.log('method:getDataGeo():finish');
+        //await delay(5000);
+        resolve(event);
+      })
+      .catch(err => {
+        console.log('method:getDataGeo():error:', err);
+        console.error(err);
+        reject(err);
+      });
+  });
+}
+
 exports.getDataFromInegi = (event) => {
   console.log('method:getDataFromInegi()');
   return new Promise((resolve, reject) => {
