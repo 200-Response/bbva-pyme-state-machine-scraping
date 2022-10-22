@@ -21,7 +21,6 @@ provider:
     description: BBVA PyME Scraping
   iamManagedPolicies:
     - arn:aws:iam::aws:policy/AmazonS3FullAccess
-    - arn:aws:iam::425231278465:policy/athenaQuery-EventBridge
     - arn:aws:iam::aws:policy/AmazonAthenaFullAccess
     - arn:aws:iam::aws:policy/AmazonSNSFullAccess
   iamRoleStatements:
@@ -40,31 +39,15 @@ provider:
         - "*"
     - Effect: 'Allow'
       Action:
-        - s3:*
-        - s3:*Object
-        - s3:GetObject
-      Resource: ${self:custom.${opt:stage, self:provider.stage}S3ARN}
-    - Effect: 'Allow'
-      Action:
-        - s3:*
-        - s3:*Object
-        - s3:GetObject
-      Resource: ${self:custom.${opt:stage, self:provider.stage}S3ARN1}
-    - Effect: 'Allow'
-      Action:
         - dynamodb:Query
         - dynamodb:Scan
         - dynamodb:GetItem
         - dynamodb:PutItem
         - dynamodb:UpdateItem
         - dynamodb:DeleteItem
-      Resource: "arn:aws:dynamodb:${self:provider.region}:*:table/*"
-    - Effect: Allow
-      Action:
-        - sqs:SendMessage
-      Resource: ${self:custom.${opt:stage, self:provider.stage}SQS_ARN_ERROR}
+      Resource: "arn:aws:dynamodb:us-east-1:*:table/*"
   environment:
-    sqsError: ${self:custom.${opt:stage, self:provider.stage}SQS_ERROR_URL}
+    #sqsError: ${self:custom.${opt:stage, self:provider.stage}SQS_ERROR_URL}
     STATE_MACHINE: arn:aws:states:us-east-1:425231278465:stateMachine:${self:custom.bbvaPyMEScrapingStateMachine}
     
 functions:
@@ -72,12 +55,28 @@ functions:
   main:
     timeout: 30
     handler: index.server
-    environment:
-      DIS_GA_TABLE: ${self:custom.DIS_GA_TABLE}
+    #environment:
+    #  DIS_GA_TABLE: ${self:custom.DIS_GA_TABLE}
     description: lambda function BBVA PyME Scraping cronjob
     events:
       - http: ANY /
       - http: 'ANY {proxy+}'
+  #lambda function that starts the state machine after been triggered by s3 created object event
+  s3Trigger:
+    handler: index.s3Trigger
+    name: pyme-state-machine-scraping-s3Trigger
+    description:  lambda function BBVA PyME Scraping - s3 trigger
+    environment:
+      s3Bucket: ${self:custom.${opt:stage, self:provider.stage}S3}
+    timeout: 900 #
+    events:
+      - s3:
+          bucket: ${self:custom.${opt:stage, self:provider.stage}S3}
+          existing: true
+          event: s3:ObjectCreated:*
+          rules:
+            - suffix: .csv
+            # - prefix: uploads/
   # lambda function BBVA PyME Scraping getDataFromInegi
   getDataGeo:
     handler: stepFunctionsHandler.getDataGeo
@@ -100,9 +99,9 @@ functions:
   generateReport:
     handler: stepFunctionsHandler.generateReport
     name: pyme-state-machine-scraping-generateReport
-    environment:
-      DIS_GA_TABLE: ${self:custom.DIS_GA_TABLE}
-      SNS_REPORT_ARN: ${self:custom.SNS_REPORT_ARN}
+    #environment:
+    #  DIS_GA_TABLE: ${self:custom.DIS_GA_TABLE}
+    #  SNS_REPORT_ARN: ${self:custom.SNS_REPORT_ARN}
     description: BBVA PyME Scraping generateReport
     timeout: 900 #
   # lambda function that runs error notification
@@ -122,74 +121,76 @@ stepFunctions:
         # TimeoutSeconds: 1500
         States:
           getDataGeo:
-              Type: Task
-              Resource:
-                Fn::GetAtt: [ getDataGeo, Arn ]
-              Catch: [ {
-                ErrorEquals: [ States.TaskFailed ],
-                Next: fallback
-              } ]
-              Next: getDataFromGoogle
-            getDataFromGoogle:
-              Type: Task
-              Resource:
-                Fn::GetAtt: [getDataFromGoogle, Arn]
-              Catch: [ {
-                ErrorEquals: [States.TaskFailed],
-                Next: fallback
-              } ]
-              Next: getDataFromInegi
-            getDataFromInegi:
-              Type: Task
-              Resource:
-                Fn::GetAtt: [getDataFromInegi, Arn]
-              Catch: [ {
-                ErrorEquals: [States.TaskFailed],
-                Next: fallback
-              } ]
-              Next: validateGetQueryStatusLoop
-            validateGetQueryStatusLoop:
-              Type: Choice
-              Choices: [ {
-                  Variable: "$.queryStatus",
-                  StringEquals: "RUNNING",
-                  Next: getDataFromInegi
-              },
-              {
+            Type: Task
+            Resource:
+              Fn::GetAtt: [ getDataGeo, Arn ]
+            Catch: [ {
+              ErrorEquals: [ States.TaskFailed ],
+              Next: fallback
+            } ]
+            Next: getDataFromGoogle
+          getDataFromGoogle:
+            Type: Task
+            Resource:
+              Fn::GetAtt: [getDataFromGoogle, Arn]
+            Catch: [ {
+              ErrorEquals: [States.TaskFailed],
+              Next: fallback
+            } ]
+            Next: getDataFromInegi
+          getDataFromInegi:
+            Type: Task
+            Resource:
+              Fn::GetAtt: [getDataFromInegi, Arn]
+            Catch: [ {
+              ErrorEquals: [States.TaskFailed],
+              Next: fallback
+            } ]
+            Next: validateGetQueryStatusLoop
+          validateGetQueryStatusLoop:
+            Type: Choice
+            Choices: [ {
                 Variable: "$.queryStatus",
-                StringEquals: "QUEUED",
+                StringEquals: "RUNNING",
                 Next: getDataFromInegi
-              },
-              {
-                Variable: "$.queryStatus",
-                StringEquals: "SUCCEEDED",
-                Next: generateReport
-              },
-              {
-                Variable: "$.queryStatus",
-                StringEquals: "FAILED",
-                Next: fallback
-              } ]
-              Default: fallback
-            generateReport:
-              Type: Task
-              Resource:
-                Fn::GetAtt: [generateReport, Arn]
-              Catch: [ {
-                ErrorEquals: [States.TaskFailed],
-                Next: fallback
-              } ]
-              Next: Done
-            Done:
-              Type: "Pass"
-              End: true
-            fallback:
-              Type: Task
-              Resource:
-                Fn::GetAtt: [fallback, Arn]
-              End: true       
+            },
+            {
+              Variable: "$.queryStatus",
+              StringEquals: "QUEUED",
+              Next: getDataFromInegi
+            },
+            {
+              Variable: "$.queryStatus",
+              StringEquals: "SUCCEEDED",
+              Next: generateReport
+            },
+            {
+              Variable: "$.queryStatus",
+              StringEquals: "FAILED",
+              Next: fallback
+            } ]
+            Default: fallback
+          generateReport:
+            Type: Task
+            Resource:
+              Fn::GetAtt: [generateReport, Arn]
+            Catch: [ {
+              ErrorEquals: [States.TaskFailed],
+              Next: fallback
+            } ]
+            Next: Done
+          Done:
+            Type: "Pass"
+            End: true
+          fallback:
+            Type: Task
+            Resource:
+              Fn::GetAtt: [fallback, Arn]
+            End: true       
 
 custom:
   bbvaPyMEScrapingStateMachine: 'bbvaPyMEScrapingStateMachine'
 
-  productionDeployBucket: 'xserverless.deploys'
+  productionDeployBucket: 'xserverless-deploys-bbva2022'
+
+  productionS3: 'pyme-raw-dataset'

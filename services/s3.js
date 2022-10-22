@@ -128,6 +128,19 @@ exports.getS3Object = (bucket, key) => {
   });
 }
 
+//Create a S3 url presigned
+exports.getSignedUrl = (params) => {
+  loadKeys();
+  var s3 = new AWS.S3({
+    signatureVersion: 'v4'
+  });
+  return  new Promise ((resolve, reject)=>{
+    s3.getSignedUrl('putObject', params, (err, url) => {
+      err ? reject(err) : resolve(url);
+    }); 
+  });
+}
+
 function loadKeys(){
   AWS.config = new AWS.Config();
 

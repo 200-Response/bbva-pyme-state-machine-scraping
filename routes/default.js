@@ -5,6 +5,6 @@ const mainController = require('../controllers/mainController');
 
 module.exports = (app) =>{
 	app.get('/test', mainController.run);
-	app.get('/generate-record', mainController.run);
+	app.post('/generate-signed-url', mainController.createS3URLForUpload);
 };
 
