@@ -27,7 +27,7 @@ exports.addItem = (params) => {
 };
 
 exports.addProcessCounter = ( processId, stepName ) =>{
-  return new Promise(  async (resolve,reject) => {
+  return new Promise(  async (resolve) => {
       let params = {
           TableName: 'process',
           Key:{
@@ -42,6 +42,7 @@ exports.addProcessCounter = ( processId, stepName ) =>{
       }
       await this.addItem(params);
       console.log(Item);
+      resolve();
   });
 }
 
