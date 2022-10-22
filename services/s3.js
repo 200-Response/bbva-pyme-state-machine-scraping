@@ -141,6 +141,21 @@ exports.getSignedUrl = (params) => {
   });
 }
 
+//Get a specific S3 object
+exports.getS3ObjectAndcreateReadStream = (bucket, key, file) => {
+  loadKeys();
+  s3 = new AWS.S3({apiVersion: '2006-03-01'});
+  let result;
+  return  new Promise (async (resolve, reject)=>{
+    await s3.getObject({
+      Bucket: bucket,
+      Key: key
+    }).createReadStream()
+    .pipe(file);
+    resolve( result );
+  });
+}
+
 function loadKeys(){
   AWS.config = new AWS.Config();
 

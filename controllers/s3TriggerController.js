@@ -3,57 +3,181 @@ const s3 = require('../services/s3');
 
 const uniqid = require('uniqid');
 //const moment = require('moment');
-const AWS = require('aws-sdk');
+//const AWS = require('aws-sdk');
 const fs = require('fs');
-const csv = require('csvtojson');
+const nthline = require('nthline');
+//const csv = require('csvtojson');
+const axios = require('axios');
 
 let stepfunctions;
 
 exports.s3Trigger = async (key) => {
-    stepfunctions = new AWS.StepFunctions();
-  
+    //stepfunctions = new AWS.StepFunctions();
+    
+    let params = {};
+
     return new Promise(async (resolve, reject) => {
       console.log("*********************** Paramsbucket - Key ", key);
       console.log("*********************** Paramsbucket - Bucket ", process.env.s3Bucket);
       
-      // client = client[0] + '/transactions/status.json';
-      const s3_params = {
-        Bucket: process.env.DonorPortalBucket,
-        Key: statusKey
-      };
-      console.log("-----------------------Params", s3_params);
-      // resolve("");
-      return s3.getS3Object(process.env.DonorPortalBucket, statusKey)
-        .then((fromResolve) => {
-          // return createDynamoItem(fromResolve.Body.toString());
-          let statusJson = JSON.parse(fromResolve.Body.toString());
-          console.log(statusJson);
-          
-          // let DMCCRMCIUPLOAD_STATE_MACHINE_ARN = "arn:aws:states:us-east-1:425231278465:stateMachine:CRMCIUploadStateMachine-prod"; //process.env.reportingStateMachine;
-          //let DMCCRMIDUPLOAD_STATE_MACHINE_ARN = process.env.crmIDUploadStateMachine;
-  
-          /*let params = {
-            stateMachineArn: DMCCRMIDUPLOAD_STATE_MACHINE_ARN,
-            input: JSON.stringify(statusJson.input),
-            // input: statusJson,
-            name: uniqid(client[0] + '-' + moment().unix() + '-')
-          }
-          */
+      const fileName = key.split('/');
 
-          //console.log(params);
-  
-          //execute the stepfunctions
-          console.log('starting execution **********************************************');
-          // return stepfunctions.startExecution(params).promise();
-          return "";
-        }).then((fromResolve) => {
-          console.log("stepfunctions start success");
-          console.log("success ", fromResolve);
-          resolve(fromResolve);
-        }).catch((error) => {
-          console.log("file does not exist ", error);
-          reject(error);
+      const temporalFilePath = "/tmp/" + fileName[1];
+
+      const s3_params = {
+        Bucket: process.env.s3Bucket,
+        Key: key
+      };
+      console.log("S3 Params", s3_params);
+      
+      params.bucket = process.env.s3Bucket;
+      params.key = key;
+      params.temporalFilePath = temporalFilePath;
+
+      let file = fs.createWriteStream(temporalFilePath);
+        
+      s3.getS3ObjectAndcreateReadStream(process.env.s3Bucket, key, file);
+
+      return endStreamFile(file)
+        .then((fromResolve) => {
+            console.log("***********************getcsvFileFromS3 - count rows");
+            //get total rows
+            return countAndReadFile(temporalFilePath);
+        })
+        .then((fromResolve) => {
+            params.totalRows = fromResolve[1];
+            console.log("***********************getcsvFileFromS3 - get headers");
+            return readLineAndGetJson(temporalFilePath, 0, "", "");
+        })
+        .then(async (fromResolve) => {
+            console.log("***********************getcsvFileFromS3 - done", fromResolve);
+            //validate the headers index
+            /*if (!((typeof fromResolve[params.email] !== 'undefined') && (typeof fromResolve[params.id] !== 'undefined') && (fromResolve[params.email] >= 0) && (fromResolve[params.id] >= 0))) {
+            params.complete = "error";
+            params.errors.push("Invalid headers - email: " + params.email + " crmid: " + params.id);
+            params.processedRows = params.totalRows;
+            params.invalidRecords = params.totalRows;
+            params.invalidRecordsUrl = "#";
+            }
+            */
+            params.headersIndex = fromResolve;
+
+            // Calculate chunks size
+            const indexRange = [];
+            
+            let index = 1;
+            while (index < params.totalRows) {
+                
+                const endAt = parseInt(index) + parseInt(process.env.BLOCK_SIZE);
+                
+                const limit = (endAt > params.totalRows) ? params.totalRows : endAt;
+
+                console.log(endAt, limit);
+
+                const values = {
+                    startAt: index,
+                    endAt: limit
+                };
+
+                // call 
+                const postParams = {
+                    ...params,
+                    indexRange: values
+                };
+
+                const response = await axios.post(process.env.CURRENT_API + '/process-chunks', 
+                    postParams
+                );
+
+                indexRange.push(values);
+
+                index = limit + 1; 
+                
+            }
+
+            params.indexRange = indexRange;
+            
+            console.log("params:", params);
+            return "";
+            // console.log("file exist", fromResolve);
+            //resolve(params);
+        })
+        .then((fromResolve) => {
+            console.log("***********************getcsvFileFromS3 - done", fromResolve);
+            
+            //params.headersIndex = fromResolve;
+            // console.log("file exist", fromResolve);
+            resolve(params);
+        })
+        .catch((error) => {
+            console.log("file does not exist ", error);
+            reject(error);
         });
     });
   }
   
+
+function endStreamFile(file) {
+return new Promise(function (resolve, reject) {
+    file.on('close', function () {
+        console.log('done');
+        resolve();
+    });
+    file.on('error', reject);
+});
+}
+
+const readLineAndGetJson = (filePath, rowIndex, email, crmid) => {
+return new Promise((resolve, reject) => {
+    nthline(rowIndex, filePath)
+    .then((line) => {
+        let arrayLine = [];
+        // console.log(line);
+        // arrayLine = line.split(',');
+        line = line.replace(/,,/g, ", ,");
+        arrayLine = line.match(/("[^"]+"|[^,]+)/g);
+
+        console.log(arrayLine);
+        /*
+        if (rowIndex === 0) {
+            let index;
+
+            valueToFind = crmid;
+            index = arrayLine.findIndex(isHeaderRow);
+            // console.log(valueToFind, index);
+            headersIndex[valueToFind] = index;
+
+            valueToFind = email;
+            index = arrayLine.findIndex(isHeaderRow);
+            // console.log(valueToFind, index);
+            headersIndex[valueToFind] = index;
+
+            console.log(headersIndex);
+        }
+        */
+       resolve(arrayLine);
+
+    });
+});
+}
+
+function countAndReadFile(pathFile) {
+    var i;
+    var count = 0;
+    const chunks = [];
+    return new Promise((resolve, reject) => {
+        fs.createReadStream(pathFile)
+        .on('data', function (chunk) {
+            chunks.push(chunk);
+            for (i = 0; i < chunk.length; ++i) {
+            if (chunk[i] == 10) count++;
+            }
+        })
+        .on('error', reject)
+        .on('end', function () {
+            console.log(count);
+            // resolve(Buffer.concat(chunks).toString('utf8'));
+            resolve([Buffer.concat(chunks), count - 1]);
+        });
+    });
+}

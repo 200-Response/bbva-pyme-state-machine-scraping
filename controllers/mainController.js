@@ -8,6 +8,8 @@ const {
 } = require('./utils');
 
 const uniqid = require('uniqid');
+const nthline = require('nthline');
+const fs = require('fs');
 
 exports.run = async (req, res) => {
 
@@ -127,6 +129,43 @@ exports.createS3URLForUpload = (req,res) => {
   });
 }
 
+exports.processChunks = async (req, res) => {
+  
+  const {
+    bucket,
+    key,
+    temporalFilePath,
+    headersIndex,
+    indexRange
+  } = req.body;
+
+  let response = [];
+
+  let file = fs.createWriteStream(temporalFilePath);
+        
+  s3Service.getS3ObjectAndcreateReadStream(process.env.s3Bucket, key, file);
+
+  return endStreamFile(file)
+    .then(async (fromResolve) => {
+        console.log("***********************getcsvFileFromS3 - count rows");
+        //get total rows
+        for (let index = indexRange.startAt; index <= (indexRange.startAt+4); index++) {
+          const line = await readLineAndGetJson(temporalFilePath, index, "", "");
+          response.push(line);
+        }
+        res.json({status:"success", data: response});
+        return;
+    })
+    .catch((error) => {
+        console.log("file does not exist ", error);
+        res.json({status:"error"});
+        return;
+    });
+
+      
+
+};
+
 const getConfig = async ( client ) => {
   const type = 'config#' + client;
 
@@ -148,3 +187,31 @@ const getConfig = async ( client ) => {
 
   return results?.Items;
 };
+
+
+function endStreamFile(file) {
+  return new Promise(function (resolve, reject) {
+      file.on('close', function () {
+          console.log('done');
+          resolve();
+      });
+      file.on('error', reject);
+  });
+}
+  
+const readLineAndGetJson = (filePath, rowIndex, email, crmid) => {
+  return new Promise((resolve, reject) => {
+      nthline(rowIndex, filePath)
+      .then((line) => {
+          let arrayLine = [];
+          // console.log(line);
+          // arrayLine = line.split(',');
+          line = line.replace(/,,/g, ", ,");
+          arrayLine = line.match(/("[^"]+"|[^,]+)/g);
+  
+          console.log(arrayLine);
+          resolve(arrayLine);
+  
+      });
+  });
+  }

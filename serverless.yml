@@ -10,7 +10,7 @@ plugins:
 provider:
   name: aws
   runtime: nodejs16.x
-  stage: development
+  stage: production
   region: us-east-1
   memorySize: 512
   stackName: pyme-state-machine-scraping
@@ -48,15 +48,16 @@ provider:
       Resource: "arn:aws:dynamodb:us-east-1:*:table/*"
   environment:
     #sqsError: ${self:custom.${opt:stage, self:provider.stage}SQS_ERROR_URL}
-    STATE_MACHINE: arn:aws:states:us-east-1:425231278465:stateMachine:${self:custom.bbvaPyMEScrapingStateMachine}
+    s3Bucket: ${self:custom.${opt:stage, self:provider.stage}S3}
+    BLOCK_SIZE: 10000
+    CURRENT_API: 'https://zzgvsvafac.execute-api.us-east-1.amazonaws.com/production'
+    STATE_MACHINE: arn:aws:states:us-east-1:529734809950:stateMachine:${self:custom.bbvaPyMEScrapingStateMachine}
     
 functions:
   # Lambda function that load Expressjs
   main:
     timeout: 30
     handler: index.server
-    #environment:
-    #  DIS_GA_TABLE: ${self:custom.DIS_GA_TABLE}
     description: lambda function BBVA PyME Scraping cronjob
     events:
       - http: ANY /
@@ -66,8 +67,6 @@ functions:
     handler: index.s3Trigger
     name: pyme-state-machine-scraping-s3Trigger
     description:  lambda function BBVA PyME Scraping - s3 trigger
-    environment:
-      s3Bucket: ${self:custom.${opt:stage, self:provider.stage}S3}
     timeout: 900 #
     events:
       - s3:
@@ -99,9 +98,6 @@ functions:
   generateReport:
     handler: stepFunctionsHandler.generateReport
     name: pyme-state-machine-scraping-generateReport
-    #environment:
-    #  DIS_GA_TABLE: ${self:custom.DIS_GA_TABLE}
-    #  SNS_REPORT_ARN: ${self:custom.SNS_REPORT_ARN}
     description: BBVA PyME Scraping generateReport
     timeout: 900 #
   # lambda function that runs error notification
