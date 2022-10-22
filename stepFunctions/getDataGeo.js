@@ -29,23 +29,29 @@ const getDataFromGeocoding = async (pyme) => {
       pyme.CP
   )
 
-  https
-    .get(
-      `${geocodingAPIURL}/maps/api/geocode/json?address=${encodedAddress}&key=${geocodingAPIKey}`,
-      (resp) => {
-        let data = ''
-        // A chunk of data has been received.
-        resp.on('data', (chunk) => {
-          data += chunk
-        })
+  var formattedURL = `${geocodingAPIURL}/maps/api/geocode/json?address=${encodedAddress}&key=${geocodingAPIKey}`
+  console.log(`FETCHING DATA FROM: ${formattedURL}`)
 
-        // The whole response has been received. Print out the result.
-        resp.on('end', () => {
-          var jsonPymes = JSON.parse(data)
-          console.log(jsonPymes.results[0].geometry.location)
-        })
-      }
-    )
+  https
+    .get(formattedURL, (resp) => {
+      let data = ''
+      // A chunk of data has been received.
+      resp.on('data', (chunk) => {
+        data += chunk
+      })
+
+      // The whole response has been received. Print out the result.
+      resp.on('end', () => {
+        var jsonPymes = JSON.parse(data)
+        pyme.lat = jsonPymes.results[0].geometry.location.lat
+        pyme.lng = jsonPymes.results[0].geometry.location.lng
+        var params = {
+          TableName: 'pyme-dataset',
+          Item: pyme,
+        }
+        dynamoService.addItem(params)
+      })
+    })
     .on('error', (err) => {
       console.log('Error: ' + err.message)
     })
@@ -55,11 +61,9 @@ const getDataFromDynamoDB = async () => {
   await dynamoService
     .getAll('pyme-dataset')
     .then(async (result) => {
-      //   console.log(result.Items)
       result.Items.forEach((pyme) => {
         getDataFromGeocoding(pyme)
       })
-      //   return result
     })
     .catch((error) => {
       console.log('error on getAll: ', error)
@@ -67,18 +71,3 @@ const getDataFromDynamoDB = async () => {
 }
 
 getDataFromDynamoDB()
-
-// const getDataGeo = (params) => {
-//   return new Promise(async (resolve, reject) => {
-//     // la lògica va aquì
-//     const pymes = dataset.getDataFromDynamoDB()
-//     pymes.forEach((pyme) => {
-//       console.log(pyme)
-//     })
-//     resolve(params)
-//   })
-// }
-
-// module.exports = {
-//   getDataGeo,
-// }
