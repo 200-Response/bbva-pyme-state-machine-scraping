@@ -1,22 +1,20 @@
 'use strict';
-
-const { google } = require('googleapis');
-const scopes = 'https://www.googleapis.com/auth/analytics.readonly';
-
-const dynamoService = require('../services/dynamo');
-const snsService = require('../services/sns');
-
-const {
-    sendSNS
-} = require('../controllers/utils');
-  
-let service_account = {};
+const dynamoService = require('../services/dynamo')
+const AWS = require('aws-sdk')
+const axios = require('axios');
+AWS.config.loadFromPath('./config.json');
+const SCRAPE_URL = 'http://localhost:3088/scrape-google';
 
 const getDataFromGoogle = (params) => {
-    
     return new Promise(async (resolve, reject) => {
-        // la lògica va aquì
-
+        let resultados = [];
+        params.map( async pyme =>{
+            //let result = await executePuppeteer(urlTest,urlTest2);
+            //console.log({...result,nombre:pyme});
+            //resultados.push(result);
+            axios.post(SCRAPE_URL,pyme);
+        });
+        console.log(resultados);
         resolve(params);
     });
 }
@@ -24,3 +22,27 @@ const getDataFromGoogle = (params) => {
 module.exports = {
     getDataFromGoogle
 }
+const getDataFromDynamoDB = async () => {
+    await dynamoService
+        .getAll('pyme-dataset')
+        .then(async (result) => {
+            let arregloPymes = [];
+            result.Items.forEach((pyme) => {
+                let pymeInfo ={
+                    unique: pyme.unique,
+                    pyme: pyme.NombComp.replaceAll(" ","+").replaceAll(",","").replaceAll("++","+"),
+                    nombre:  pyme.NombComp,
+                    direccion1: pyme.Direccion1,
+                    estado: pyme.Estado
+                };
+                arregloPymes.push(pymeInfo);
+                axios.post(SCRAPE_URL,pymeInfo);
+            });
+        })
+        .catch((error) => {
+            console.log('error on getAll: ', error)
+        })
+}
+
+getDataFromDynamoDB();
+//getDataFromGoogle();
