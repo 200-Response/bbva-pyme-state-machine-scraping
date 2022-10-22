@@ -1,9 +1,10 @@
 'use strict'
-// const { getQuery } = require('../controllers/utils')
 
 const dynamoService = require('../services/dynamo')
 const AWS = require('aws-sdk')
 AWS.config.loadFromPath('./config.json')
+
+const API_URL = 'http://localhost:3088/inegi-api';
 
 // DENUE API
 const denueHost = 'https://www.inegi.org.mx'
@@ -58,6 +59,8 @@ function cleanText(str) {
   return String(str).normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^\w\s]/gi, '').replace('  ', ' ').toUpperCase()
 }
 
+const processId = 'asdfioweqro2341'
+
 const getDataFromInegi = async (pyme) => {
   var formattedURL = `${denueHost}/app/api/denue/v1/consulta/Buscar/todos/${pyme.lat},${pyme.lng}/100/${denueKey}`
   console.log(`FETCHING DATA FROM: ${formattedURL}`)
@@ -70,6 +73,8 @@ const getDataFromInegi = async (pyme) => {
   axios(config)
     .then(function (response) {
       for (let index = 0; index < response.data.length; index++) {
+
+        dynamoService.addItem(params)
         const company = response.data[index]
         // Limpiar dataset
         var datasetNombre = cleanText(pyme.NombComp)
@@ -85,21 +90,33 @@ const getDataFromInegi = async (pyme) => {
         var inegiColonia = cleanText(company.Colonia)
         var inegiEstadoMunicipio = cleanText(company.Ubicacion)
 
-        // console.log(`${response.data.length} datos extraidos del INEGI para la PyME: ${datasetNombre}`)
-        // Municipio
-        // console.log(`Comparando localidad del dataset: ${datasetMunicipio} VS localidad registrada en INEGI: ${inegiEstadoMunicipio}`)
+        // Municipio        
         if (inegiEstadoMunicipio.includes(datasetMunicipio)) {
-          // Colonia
-          // console.log(`Comparando colonia del dataset: ${datasetColonia} VS colonia registrada en INEGI: ${inegiColonia}`)
+          // Colonia          
           if (inegiColonia == datasetColonia) {
-            // Calle
-            // console.log(`Comparando calle del dataset: ${datasetCalle} VS calle registrada en INEGI: ${inegiCalle}`)
+            // Calle            
             if (inegiCalle == datasetCalle) {
               // Nombre o razón social               
-              if (similarity(datasetNombre, inegiNombre) > 0.5) {
-                console.log(company)
-              } else if (similarity(datasetNombre, inegiRazon) > 0.5) {
-                console.log(company)
+              if (similarity(datasetNombre, inegiNombre) > 0.75 || similarity(datasetNombre, inegiRazon) > 0.75) {
+
+                pyme.data_inegi_CLEE = company.CLEE
+                pyme.data_inegi_id = company.Id
+                pyme.data_inegi_razon_social = inegiRazon
+                pyme.data_inegi_tipo_empresa = company.Clase_actividad
+                pyme.data_inegi_numero_empleados = company.Estrato
+                pyme.data_inegi_tipo_vialidad = company.Tipo_vialidad
+                pyme.data_inegi_telefono = company.Telefono
+                pyme.data_inegi_tipo_establecimiento = company.Tipo
+                pyme.data_inegi_email = company.Correo_e
+                pyme.data_inegi_sitio_web = company.Sitio_internet
+                pyme.data_inegi_centro_comercial = company.CentroComercial
+                pyme.data_inegi_tipo_centro_comercial = company.TipoCentroComercial
+                pyme.data_inegi_numero_de_local = company.NumLocal
+
+                var params = {
+                  TableName: 'pyme-dataset',
+                  Item: pyme,
+                }
               }
             }
           }
@@ -116,8 +133,18 @@ const getDataFromDynamoDB = async () => {
     .getAll('pyme-dataset')
     .then(async (result) => {
       result.Items.forEach((pyme) => {
-        // console.log(pyme)
-        getDataFromInegi(pyme)
+        let pymeItem = {
+          processId,
+          unique: pyme.unique,
+          type: pyme.type,
+          NombComp: pyme.NombComp,
+          Direccion1: pyme.Direccion1,
+          Colonia: pyme.Colonia,
+          MunicipioDel: pyme.MunicipioDel,
+          geocoding_lat: pyme.geocoding_lat,
+          geocoding_long: pyme.geocoding_long
+        }
+        axios.post(API_URL, pymeItem)
       })
     })
     .catch((error) => {
