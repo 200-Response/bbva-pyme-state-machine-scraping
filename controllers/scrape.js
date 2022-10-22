@@ -1,22 +1,39 @@
-
-
-
-
 const puppeteer = require("puppeteer");
+const dynamoService = require('../services/dynamo')
+const AWS = require('aws-sdk')
+AWS.config.loadFromPath('./config.json');
 
 
 exports.run = async (req, res) => {
-    console.log(req.body);
-    let {pyme, nombre, unique } = req.body;
-    if(!pyme || !nombre){
-        return res.status(400).json("error en los datos proporcionados");
+    console.log('********************** SCRAPE GOOGLE ********************');
+    let {pyme, nombre, unique, type } = req.body;
+
+    if(!pyme || !nombre ||!type){
+        return res.status(400).json("error en los datos proporcionados pyme, nombre, type");
     }
     let urlTest = `https://www.google.com.mx/maps/search/${pyme}`;
     let urlTest2 = `https://www.google.com/search?q=${pyme}`;
     let result = await executePuppeteer(urlTest, urlTest2);
-    result = {...result,pyme,nombre, unique};
-    console.log(result);
-    res.json(result);
+    let params = {
+        TableName: "pyme-dataset",
+        Key:{
+            unique,
+            type
+        }
+    }
+
+    let {Item} = await dynamoService.getItem(params);
+    Item.google_score =  result.google_score;
+    Item.google_reviews = result.google_reviews;
+    Item.google_phone = result.google_phone;
+
+    params ={
+        TableName: "pyme-dataset",
+        Item
+    };
+    await dynamoService.addItem(params);
+    console.log(Item);
+    res.json("successfully recorded");
 }
 
 const executePuppeteer = async(urlTest,urlTest2)=>{
@@ -28,22 +45,20 @@ const executePuppeteer = async(urlTest,urlTest2)=>{
     await page.goto(urlTest);
     await page.waitForTimeout(2000);
     const googleMaps = await page.evaluate(async() => {
-        let score = document.querySelector('.fontDisplayLarge')?.innerText??'no score';
-        let reviewsCount = document.querySelector('.rqjGif')?.innerText?? 'no reviews count';
-        let reviews =  Array.from( document.querySelectorAll('.jJc9Ad')).map( el=>{
-            return {
-                stars: el.querySelector('.kvMYJc')?.getAttribute('aria-label')?.toString() ?? 'empty',
-                review: el.querySelector('.wiI7pd').innerHTML.toString()
-            }
-        } );
+        let google_score = document.querySelector('.fontDisplayLarge')?.innerText??'no score';
+        let google_reviews = document.querySelector('.rqjGif')?.innerText?? 'no reviews count';
+        // let reviews =  Array.from( document.querySelectorAll('.jJc9Ad')).map( el=>{
+        //     return {
+        //         stars: el.querySelector('.kvMYJc')?.getAttribute('aria-label')?.toString() ?? 'empty',
+        //         review: el.querySelector('.wiI7pd').innerHTML.toString()
+        //     }
+        // } );
 
         return  {
-            score,
-            reviewsCount,
-            reviews,
+            google_score,
+            google_reviews,
         };
     });
-
 
     await page.goto(urlTest2);
     await page.waitForTimeout(2000);
@@ -53,9 +68,8 @@ const executePuppeteer = async(urlTest,urlTest2)=>{
                 return el.innerText.toString().replace('Teléfono:','').replaceAll(' ','')
             }
         });
-
         return {
-            phone: phone.filter( item => item ).join()
+            google_phone: phone.filter( item => item ).join()
         }
     })
     await browser.close()

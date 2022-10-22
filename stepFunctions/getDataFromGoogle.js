@@ -1,8 +1,9 @@
 'use strict';
 const dynamoService = require('../services/dynamo')
 const AWS = require('aws-sdk')
-const axios = require('axios');
 AWS.config.loadFromPath('./config.json');
+
+const axios = require('axios');
 const SCRAPE_URL = 'http://localhost:3088/scrape-google';
 
 const getDataFromGoogle = (params) => {
@@ -30,12 +31,14 @@ const getDataFromDynamoDB = async () => {
             result.Items.forEach((pyme) => {
                 let pymeInfo ={
                     unique: pyme.unique,
+                    type: pyme.type,
                     pyme: pyme.NombComp.replaceAll(" ","+").replaceAll(",","").replaceAll("++","+"),
                     nombre:  pyme.NombComp,
                     direccion1: pyme.Direccion1,
                     estado: pyme.Estado
                 };
                 arregloPymes.push(pymeInfo);
+                console.log('peticion ',SCRAPE_URL, pyme.unique);
                 axios.post(SCRAPE_URL,pymeInfo);
             });
         })
