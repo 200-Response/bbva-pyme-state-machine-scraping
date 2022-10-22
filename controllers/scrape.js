@@ -6,7 +6,7 @@ AWS.config.loadFromPath('./config.json');
 
 exports.run = async (req, res) => {
     console.log('********************** SCRAPE GOOGLE ********************');
-    let {pyme, nombre, unique, type } = req.body;
+    let {pyme, nombre, unique, type, processId } = req.body;
 
     if(!pyme || !nombre ||!type){
         return res.status(400).json("error en los datos proporcionados pyme, nombre, type");
@@ -33,6 +33,7 @@ exports.run = async (req, res) => {
     };
     await dynamoService.addItem(params);
     console.log(Item);
+    await dynamoService.addProcessCounter(processId,'googleStep');
     res.json("successfully recorded");
 }
 

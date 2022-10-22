@@ -26,6 +26,26 @@ exports.addItem = (params) => {
 
 };
 
+exports.addProcessCounter = ( processId, stepName ) =>{
+  return new Promise(  async (resolve,reject) => {
+      let params = {
+          TableName: 'process',
+          Key:{
+            processId
+          }
+      };
+      let { Item } = await this.getItem(params);
+      Item[stepName] = Item[stepName]+1;
+      params = {
+        TableName:'process',
+        Item
+      }
+      await this.addItem(params);
+      console.log(Item);
+  });
+}
+
+
 //Query a specific item from a database
 exports.queryItem = (params) => {
   loadKeys();

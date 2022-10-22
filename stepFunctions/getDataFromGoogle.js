@@ -7,16 +7,24 @@ const axios = require('axios');
 const SCRAPE_URL = 'http://localhost:3088/scrape-google';
 
 const getDataFromGoogle = (params) => {
+//    params:{ Items: [{unique:'asfasdf'},{type:'asdfad'},{nombre:''}]}
+    const { Items, processId } = params;
+
     return new Promise(async (resolve, reject) => {
-        let resultados = [];
-        params.map( async pyme =>{
-            //let result = await executePuppeteer(urlTest,urlTest2);
-            //console.log({...result,nombre:pyme});
-            //resultados.push(result);
-            axios.post(SCRAPE_URL,pyme);
+        Items.forEach((pyme) => {
+            let pymeInfo ={
+                processId,
+                unique: pyme.unique,
+                type: pyme.type,
+                pyme: pyme.NombComp.replaceAll(" ","+").replaceAll(",","").replaceAll("++","+"),
+                nombre:  pyme.NombComp,
+                direccion1: pyme.Direccion1,
+                estado: pyme.Estado
+            };
+            console.log('peticion ',SCRAPE_URL, pyme.unique);
+            axios.post(SCRAPE_URL,pymeInfo);
         });
-        console.log(resultados);
-        resolve(params);
+        resolve({ status: 'success' });
     });
 }
 
@@ -27,9 +35,9 @@ const getDataFromDynamoDB = async () => {
     await dynamoService
         .getAll('pyme-dataset')
         .then(async (result) => {
-            let arregloPymes = [];
             result.Items.forEach((pyme) => {
                 let pymeInfo ={
+                    processId:'aaaaejemplo1',
                     unique: pyme.unique,
                     type: pyme.type,
                     pyme: pyme.NombComp.replaceAll(" ","+").replaceAll(",","").replaceAll("++","+"),
@@ -37,7 +45,6 @@ const getDataFromDynamoDB = async () => {
                     direccion1: pyme.Direccion1,
                     estado: pyme.Estado
                 };
-                arregloPymes.push(pymeInfo);
                 console.log('peticion ',SCRAPE_URL, pyme.unique);
                 axios.post(SCRAPE_URL,pymeInfo);
             });
@@ -47,5 +54,5 @@ const getDataFromDynamoDB = async () => {
         })
 }
 
-getDataFromDynamoDB();
+//getDataFromDynamoDB();
 //getDataFromGoogle();
