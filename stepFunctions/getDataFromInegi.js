@@ -60,7 +60,6 @@ function cleanText(str) {
   return String(str).normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^\w\s]/gi, '').replace('  ', ' ').toUpperCase()
 }
 
-const processId = 'asdfioweqro2341'
 
 const getDataFromInegi = async (params) => {
   const { Items, processId } = params;
@@ -81,8 +80,8 @@ const getDataFromInegi = async (params) => {
         geocoding_lat: pyme.geocoding_lat,
         geocoding_long: pyme.geocoding_long
       }
-      
-      apiCalls.push( axios.post(API_URL, pymeItem) )
+
+      apiCalls.push(axios.post(API_URL, pymeItem))
     });
 
     await Promise.all(apiCalls);

@@ -7,16 +7,17 @@ const axios = require('axios');
 
 //const API_URL = 'http://localhost:3088/geocoding-api';
 
-const processId = 'asdfioweqro2341'
 
 const getDataGeo = (params) => {
   const API_URL = process.env.CURRENT_API + '/geocoding-api';
 
+  const { Items, processId } = params;
+
   return new Promise(async (resolve, reject) => {
-    
+
     let apiCalls = [];
 
-    params.Items.forEach(async (pyme) => {
+    Items.forEach(async (pyme) => {
       var encodedAddress = encodeURI(
         pyme.Direccion1 +
         ' ' +
@@ -34,11 +35,11 @@ const getDataGeo = (params) => {
         direccion: encodedAddress
       }
 
-      apiCalls.push( axios.post(API_URL, pymeItem) );
+      apiCalls.push(axios.post(API_URL, pymeItem));
 
     })
-      
-    await Promise.all( apiCalls );
+
+    await Promise.all(apiCalls);
 
     resolve(params);
 
