@@ -4,8 +4,6 @@ const dynamoService = require('../services/dynamo')
 const AWS = require('aws-sdk')
 AWS.config.loadFromPath('./config.json')
 
-const API_URL = 'http://localhost:3088/data-mexico-api';
-
 
 // HTTP Request
 var axios = require('axios')
@@ -37,9 +35,10 @@ const getDataFromDynamoDB = async () => {
 
 // getDataFromDynamoDB()
 
-'use strict';
-
 const getDataFromDataMexico = (params) => {
+
+    // const API_URL = 'http://localhost:3088/data-mexico-api';
+    const API_URL = process.env.CURRENT_API + '/data-mexico-api';
 
     return new Promise(async (resolve, reject) => {
 
