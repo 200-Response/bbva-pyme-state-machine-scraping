@@ -12,5 +12,6 @@ module.exports = (app) => {
 	app.post('/process-chunks', mainController.processChunks);
 	app.post('/geocoding-api', apis.geocoding)
 	app.post('/inegi-api', apis.denue)
+	app.post('/data-mexico-api', apis.dataMexico)
 };
 
