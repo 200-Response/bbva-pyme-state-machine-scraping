@@ -93,7 +93,7 @@ exports.processChunks = async (req, res) => {
 
         console.log("***********************getcsvFileFromS3 - count rows");
         //get total rows
-        for (let index = indexRange.startAt; index <= (indexRange.startAt+4); index++) {
+        for (let index = indexRange.startAt; index <= indexRange.endAt; index++) {
           const line = await readLineAndGetJson(temporalFilePath, index, "", "");
           // create jsonObject 
           let  currentObject = Object.assign( ...headersIndex.map((element, index)=>({[element]: line[index]}) )); 
