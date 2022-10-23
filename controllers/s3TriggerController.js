@@ -33,7 +33,11 @@ exports.s3Trigger = async (key) => {
       params.bucket = process.env.s3Bucket;
       params.key = key;
       params.temporalFilePath = temporalFilePath;
-
+      
+      const currentDate = new Date();
+      params.uniqueId = currentDate.toISOString().split('T')[0] + "-" + uniqid();
+      params.processId = uniqueId;
+      
       let file = fs.createWriteStream(temporalFilePath);
         
       s3.getS3ObjectAndcreateReadStream(process.env.s3Bucket, key, file);

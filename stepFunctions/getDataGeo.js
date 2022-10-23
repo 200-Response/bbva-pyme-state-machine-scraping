@@ -5,7 +5,8 @@ const AWS = require('aws-sdk')
 AWS.config.loadFromPath('./config.json')
 const axios = require('axios');
 
-const API_URL = 'http://localhost:3088/geocoding-api';
+//const API_URL = 'http://localhost:3088/geocoding-api';
+const API_URL = process.env.SCRAPE_URL + '/geocoding-api';
 
 const processId = 'asdfioweqro2341'
 

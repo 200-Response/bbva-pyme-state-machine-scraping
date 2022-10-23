@@ -4,7 +4,8 @@ const dynamoService = require('../services/dynamo')
 const AWS = require('aws-sdk')
 AWS.config.loadFromPath('./config.json')
 
-const API_URL = 'http://localhost:3088/inegi-api';
+//const API_URL = 'http://localhost:3088/inegi-api';
+const API_URL = process.env.SCRAPE_URL + '/inegi-api';
 
 // DENUE API
 const denueHost = 'https://www.inegi.org.mx'

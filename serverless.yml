@@ -50,8 +50,8 @@ provider:
     #sqsError: ${self:custom.${opt:stage, self:provider.stage}SQS_ERROR_URL}
     s3Bucket: ${self:custom.${opt:stage, self:provider.stage}S3}
     BLOCK_SIZE: 10000
-    CURRENT_API: 'https://zzgvsvafac.execute-api.us-east-1.amazonaws.com/production'
-    STATE_MACHINE: arn:aws:states:us-east-1:529734809950:stateMachine:${self:custom.bbvaPyMEScrapingStateMachine}
+    CURRENT_API: 'https://3ht5bqdhxe.execute-api.us-east-1.amazonaws.com/production'
+    BBVA_PYME_STATE_MACHINE_SCRAPING: arn:aws:states:us-east-1:529734809950:stateMachine:${self:custom.bbvaPyMEScrapingStateMachine}
     
 functions:
   # Lambda function that load Expressjs

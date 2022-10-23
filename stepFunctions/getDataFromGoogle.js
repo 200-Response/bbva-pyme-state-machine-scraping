@@ -4,9 +4,11 @@ const AWS = require('aws-sdk')
 AWS.config.loadFromPath('./config.json');
 
 const axios = require('axios');
-const SCRAPE_URL = 'http://localhost:3088/scrape-google';
 
 const getDataFromGoogle = (params) => {
+
+    //const SCRAPE_URL = 'http://localhost:3088/scrape-google';
+    const SCRAPE_URL = process.env.CURRENT_API + '/scrape-google';
 //    params:{ Items: [{unique:'asfasdf'},{type:'asdfad'},{nombre:''}]}
     const { Items, processId } = params;
 
