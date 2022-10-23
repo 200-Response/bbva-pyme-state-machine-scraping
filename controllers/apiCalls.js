@@ -97,8 +97,11 @@ exports.geocoding = async (req, res) => {
                 Item
             };
 
+            console.log("geocoding", params);
             await dynamoService.addItem(params)
-            await dynamoService.addProcessCounter(processId, 'geocodingStep');
+            
+            console.log("updating step");
+            //await dynamoService.addProcessCounter(processId, 'geocodingStep');
         })
         .catch(function (error) {
             console.log(error)

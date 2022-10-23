@@ -92,11 +92,11 @@ functions:
     name: pyme-state-machine-scraping-getDataFromDataMexico
     description: BBVA PyME Scraping getDataFromDataMexico
     timeout: 100 #
-  generateReport:
-    handler: stepFunctionsHandler.generateReport
-    name: pyme-state-machine-scraping-generateReport
-    description: BBVA PyME Scraping generateReport
-    timeout: 900
+  #generateReport:
+  #  handler: stepFunctionsHandler.generateReport
+  #  name: pyme-state-machine-scraping-generateReport
+  #  description: BBVA PyME Scraping generateReport
+  #  timeout: 900
   fallback:
     timeout: 900
     handler: stepFunctionsHandler.fallback
@@ -147,16 +147,16 @@ stepFunctions:
               ErrorEquals: [ States.TaskFailed ],
               Next: fallback
             } ]
-            Next: generateReport
-          generateReport:
-            Type: Task
-            Resource:
-              Fn::GetAtt: [generateReport, Arn]
-            Catch: [ {
-              ErrorEquals: [States.TaskFailed],
-              Next: fallback
-            } ]
-            Next: Done
+            Next: Done #generateReport
+          #generateReport:
+          #  Type: Task
+          #  Resource:
+          #    Fn::GetAtt: [generateReport, Arn]
+          #  Catch: [ {
+          #    ErrorEquals: [States.TaskFailed],
+          #    Next: fallback
+          #  } ]
+          #  Next: Done
           Done:
             Type: "Pass"
             End: true

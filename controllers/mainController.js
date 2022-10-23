@@ -75,7 +75,7 @@ exports.processChunks = async (req, res) => {
     temporalFilePath,
     headersIndex,
     indexRange,
-    uniqueId
+    processId
   } = req.body;
 
   let response = [];
@@ -98,7 +98,7 @@ exports.processChunks = async (req, res) => {
           // create jsonObject 
           let  currentObject = Object.assign( ...headersIndex.map((element, index)=>({[element]: line[index]}) )); 
           
-          currentObject.unique = uniqueId;
+          currentObject.unique = processId;
           currentObject.type = 'record#' + currentIndexes + '#' + currentObject.Index;
 
           response.push(currentObject);
@@ -124,14 +124,14 @@ exports.processChunks = async (req, res) => {
           temporalFilePath,
           headersIndex,
           indexRange,
-          uniqueId,
+          processId,
           Items: response
         };
 
         const paramsStateMachine = {
           stateMachineArn: BBVA_PYME_STATE_MACHINE_SCRAPING,
           input:JSON.stringify( paramsStepFunctions ),
-          name: uniqid( uniqueId + '-' + currentIndexes + '-' )
+          name: uniqid( processId + '-' + currentIndexes + '-' )
         }
         console.log(paramsStateMachine);
         

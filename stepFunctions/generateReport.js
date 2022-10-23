@@ -1,13 +1,7 @@
 'use strict';
 
-const generateReport = (params) => {
-
-    return new Promise(async (resolve, reject) => {
-        
-        
-
-        resolve(params);
-    });
+const generateReport = (req, res) => {
+    
 }
 
 module.exports = {

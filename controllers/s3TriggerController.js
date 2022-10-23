@@ -1,5 +1,6 @@
 
 const s3 = require('../services/s3');
+const dynamo = require('../services/dynamo');
 
 const uniqid = require('uniqid');
 const fs = require('fs');
@@ -30,8 +31,8 @@ exports.s3Trigger = async (key) => {
       params.temporalFilePath = temporalFilePath;
       
       const currentDate = new Date();
-      params.uniqueId = currentDate.toISOString().split('T')[0] + "-" + uniqid();
-      params.processId = params.uniqueId;
+      //params.uniqueId = currentDate.toISOString().split('T')[0] + "-" + uniqid();
+      params.processId = currentDate.toISOString().split('T')[0] + "-" + uniqid();//params.uniqueId;
 
       let file = fs.createWriteStream(temporalFilePath);
         
@@ -54,7 +55,22 @@ exports.s3Trigger = async (key) => {
             
             params.headersIndex = fromResolve;
 
-            // Calculate chunks size
+            const itemProcess = {
+                "processId": params.processId,
+                "geocodingStep": 0,
+                "googleStep": 0,
+                "inegiStep": 0,
+                "total": params.totalRows,
+                "fileName": fileName[1]
+            }
+            const dynamoParams = {
+                   TableName: 'process',
+                   Item: itemProcess
+                 };
+            await dynamo.addItem( dynamoParams);
+
+    
+             // Calculate chunks size
             const indexRange = [];
             
             let index = 1;
