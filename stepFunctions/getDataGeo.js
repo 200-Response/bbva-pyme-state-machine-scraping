@@ -35,23 +35,35 @@ const getDataGeo = (params) => {
         direccion: encodedAddress
       }
 
-      //apiCalls.push(
-        try {
-          axios.post(API_URL, pymeItem)
-        } catch (error) {
-          console.log(error);
-        }
-        //);
+      apiCalls.push( axios.post(API_URL, pymeItem) );
 
     })
 
-    /*try {
-      await Promise.all(apiCalls);
+    let response
+    try {
+      response = await Promise.all(apiCalls);
+      console.log(response);
     }
     catch(err) {
       console.log(err);
     }
-    */
+
+
+    try {
+      let updatedItemms = [];
+
+      for(let index = 0; index < response.length; index++) {
+        const element = response[index];
+        if (element?.data?.Item) {
+          updatedItemms.push(element?.data?.Item);
+        }
+      }
+
+      params.Items = updatedItemms?.length ? updatedItemms : params.Items;
+    }
+    catch(err) {
+      console.log(err);
+    }
 
     resolve(params);
 

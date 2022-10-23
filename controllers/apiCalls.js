@@ -106,7 +106,7 @@ exports.geocoding = async (req, res) => {
         .catch(function (error) {
             console.log(error)
         })
-    res.send({ status: "success"});
+    res.send({ status: "success", Item });
 }
 
 exports.denue = async (req, res) => {

@@ -25,7 +25,7 @@ const getDataFromGoogle = (params) => {
                 direccion1: pyme.Direccion1,
                 estado: pyme.Estado
             };
-            console.log('peticion ',SCRAPE_URL, pyme.unique);
+            console.log('peticion ',SCRAPE_URL, pyme.unique, pyme.type);
             apiCalls.push(axios.post(SCRAPE_URL,pymeInfo));
         });
 
