@@ -2,72 +2,10 @@ const dynamoService = require('../services/dynamo');
 const AWS = require('aws-sdk');
 
 const s3Service = require('../services/s3');
-const {
-  calculateDateRange,
-  getClientConfig
-} = require('./utils');
 
 const uniqid = require('uniqid');
 const nthline = require('nthline');
 const fs = require('fs');
-
-exports.run = async (req, res) => {
-
-  
-  let paramsDate = {};
-
-  if ( req?.query?.date ) {
-    paramsDate = {
-      date: req.query.date,
-      diffDias: 0
-    };
-  }
-  else {
-    paramsDate = {
-      date: new Date(),
-      diffDias: 1
-    };
-  }
-  
-  const dateToProcess = calculateDateRange(paramsDate);
-  
-  let response = {};
-  
-  // get client configs
-  const { currentClient, pendingClients, count } = getClientConfig([config]);
-  
-  const stepFunctionParams = {
-    client: currentClient[0]?.client,
-    dateToProcess,
-    tables: currentClient[0]?.tables,
-    pendingClients,
-    count,
-    config,
-    output_query_prefix: 'temp.crm.upload/clients/data-lake/dis-ga/results/'
-  }
-
-  console.log("stepFunctionParams", stepFunctionParams);
-
-  response = JSON.parse(JSON.stringify(stepFunctionParams));
-
-  response.config[0].ga_credentials = undefined;
-
-  const params = {
-    stateMachineArn: process.env.STATE_MACHINE,
-    input: JSON.stringify( stepFunctionParams ),
-    name: uniqid(dateToProcess[0][0]+'-'+stepFunctionParams?.client+'-')
-  }
-  console.log(params);
-
-  const stepfunctions = new AWS.StepFunctions();
-  
-  // execute the stepfunctions
-  await stepfunctions.startExecution(params).promise()
-  console.log("stepfunctions start success");
-
-  res.send(response);
-    
-}
 
 exports.createS3URLForUpload = (req,res) => {
   
@@ -136,7 +74,8 @@ exports.processChunks = async (req, res) => {
     key,
     temporalFilePath,
     headersIndex,
-    indexRange
+    indexRange,
+    uniqueId
   } = req.body;
 
   let response = [];
@@ -147,12 +86,58 @@ exports.processChunks = async (req, res) => {
 
   return endStreamFile(file)
     .then(async (fromResolve) => {
+
+        let storeToDynamoDb = [];
+
+        const currentIndexes = indexRange.startAt + '-' + indexRange.endAt;
+
         console.log("***********************getcsvFileFromS3 - count rows");
         //get total rows
         for (let index = indexRange.startAt; index <= (indexRange.startAt+4); index++) {
           const line = await readLineAndGetJson(temporalFilePath, index, "", "");
-          response.push(line);
+          // create jsonObject 
+          let  currentObject = Object.assign( ...headersIndex.map((element, index)=>({[element]: line[index]}) )); 
+          
+          currentObject.unique = uniqueId;
+          currentObject.type = 'record#' + currentIndexes + '#' + currentObject.Index;
+
+          response.push(currentObject);
+
+          const dynamoParams = {
+            TableName: 'pyme-dataset',
+            Item: currentObject
+          };
+
+          storeToDynamoDb.push( dynamoService.addItem( dynamoParams) );
         }
+
+        await Promise.all( storeToDynamoDb );
+
+
+        // start the state machine
+        const stepfunctions = new AWS.StepFunctions();
+        let BBVA_PYME_STATE_MACHINE_SCRAPING = process.env.BBVA_PYME_STATE_MACHINE_SCRAPING;
+
+        const paramsStepFunctions = {
+          bucket,
+          key,
+          temporalFilePath,
+          headersIndex,
+          indexRange,
+          uniqueId,
+          Items: response
+        };
+
+        const paramsStateMachine = {
+          stateMachineArn: BBVA_PYME_STATE_MACHINE_SCRAPING,
+          input:JSON.stringify( paramsStepFunctions ),
+          name: uniqid( uniqueId + '-' + currentIndexes + '-' )
+        }
+        console.log(paramsStateMachine);
+        
+        await stepfunctions.startExecution(paramsStateMachine).promise();
+
+        console.log("data", response);
         res.json({status:"success", data: response});
         return;
     })
@@ -165,29 +150,6 @@ exports.processChunks = async (req, res) => {
       
 
 };
-
-const getConfig = async ( client ) => {
-  const type = 'config#' + client;
-
-  const dynamoParams = {
-    TableName: process.env.DIS_GA_TABLE,
-    KeyConditionExpression: "client = :cl and #tp = :yyyy",
-    ExpressionAttributeNames: {
-        "#tp": "type"
-    },
-    ExpressionAttributeValues: {
-        ":cl": client,
-        ":yyyy": type
-    }
-  };
-  
-  console.log("getconfig():dynamoService.dynamoParams", dynamoParams);
-  const results = await dynamoService.queryItem(dynamoParams);
-  console.log("getconfig():dynamoService.queryItem():results", results);
-
-  return results?.Items;
-};
-
 
 function endStreamFile(file) {
   return new Promise(function (resolve, reject) {

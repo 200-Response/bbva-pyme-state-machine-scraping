@@ -84,10 +84,10 @@ exports.geocoding = async (req, res) => {
 
     let { Item } = await dynamoService.getItem(params);
 
-    axios(config)
-        .then(function (response) {
-            let lat = response.data.results[0].geometry.location.lat
-            let long = response.data.results[0].geometry.location.lng
+    await axios(config)
+        .then(async function (response) {
+            let lat = response?.data?.results[0]?.geometry?.location?.lat
+            let long = response?.data?.results[0]?.geometry?.location?.lng
 
             Item.geocoding_lat = lat
             Item.geocoding_long = long
@@ -97,12 +97,13 @@ exports.geocoding = async (req, res) => {
                 Item
             };
 
-            dynamoService.addItem(params)
-            dynamoService.addProcessCounter(processId, 'geocodingStep');
+            await dynamoService.addItem(params)
+            await dynamoService.addProcessCounter(processId, 'geocodingStep');
         })
         .catch(function (error) {
             console.log(error)
         })
+    res.send({ status: "success"});
 }
 
 exports.denue = async (req, res) => {
@@ -125,8 +126,8 @@ exports.denue = async (req, res) => {
 
     let { Item } = await dynamoService.getItem(params);
 
-    axios(config)
-        .then(function (response) {
+    await axios(config)
+        .then(async function (response) {
             for (let index = 0; index < response.data.length; index++) {
 
                 const company = response.data[index]
@@ -171,8 +172,8 @@ exports.denue = async (req, res) => {
                                     Item
                                 };
 
-                                dynamoService.addItem(params)
-                                dynamoService.addProcessCounter(processId, 'inegiStep');
+                                await dynamoService.addItem(params)
+                                await dynamoService.addProcessCounter(processId, 'inegiStep');
                             }
                         }
                     }

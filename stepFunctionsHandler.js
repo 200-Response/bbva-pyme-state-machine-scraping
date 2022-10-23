@@ -1,22 +1,5 @@
 'use strict';
 
-const {
-  delay
-} = require('./controllers/utils');
-
-exports.cronTrigger = async (event, context, callback) => {
-  
-  const controller = require('./controllers/mainController.js');
-  console.log("start:cronTrigger()");
-  const response = {
-    send(){ callback() }
-  }
-  await controller.run({}, response);
-  console.log("end:cronTrigger()");
-  
-  return {};
-};
-
 exports.getDataGeo = (event) => {
   console.log('method:getDataGeo()');
   return new Promise((resolve, reject) => {
@@ -27,7 +10,6 @@ exports.getDataGeo = (event) => {
     return getDataGeo(event)
       .then(async (fromResolve) => {
         console.log('method:getDataGeo():finish');
-        //await delay(5000);
         resolve(event);
       })
       .catch(err => {
@@ -48,7 +30,6 @@ exports.getDataFromInegi = (event) => {
     return getDataFromInegi(event)
       .then(async (fromResolve) => {
         console.log('method:getDataFromInegi():finish');
-        //await delay(5000);
         resolve(event);
       })
       .catch(err => {
@@ -69,7 +50,6 @@ exports.getDataFromGoogle = (event) => {
     return getDataFromGoogle(event)
       .then(async fromResolve => {
         console.log('method:getDataFromGoogle():finish');
-        //await delay(5000);
         resolve(event);
       })
       .catch(err => {
@@ -85,12 +65,11 @@ exports.generateReport = (event) => {
   return new Promise((resolve, reject) => {
     console.log('method:generateReport():step:executing:generateReport');
     
-    const { generateReport } = require(`./stepFunctions/getDataFromGoogle`);
+    const { generateReport } = require(`./stepFunctions/generateReport`);
     
     return generateReport(event)
       .then(async fromResolve => {
         console.log('method:generateReport():finish');
-        //await delay(5000);
         resolve(event);
       })
       .catch(err => {
@@ -122,4 +101,3 @@ exports.fallback = (event) => {
 
   });
 }
-

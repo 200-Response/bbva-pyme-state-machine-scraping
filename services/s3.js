@@ -40,22 +40,6 @@ exports.getS3ObjectStream = (bucket, key) => {
       Key: key
     }).createReadStream();
     resolve( result );
-
-    // s3.getObject({
-    //   Bucket: bucket,
-    //   Key: key
-    // }, (error, data) =>{
-    //   if(error) return reject(error);
-    //   // console.log(data);
-    //   if(data){
-    //     // result = JSON.parse( data.Body.toString('utf-8') );
-    //     result = data;
-    //   }
-    //   else {
-    //     result = 'none';
-    //   }
-    //   resolve( result );
-    // });
   });
 }
 
@@ -158,16 +142,6 @@ exports.getS3ObjectAndcreateReadStream = (bucket, key, file) => {
 
 function loadKeys(){
   AWS.config = new AWS.Config();
-
-
-  if (process.env.DMC_ENV && process.env.DMC_ENV == 'LOCAL') {
-    console.log(' **************** ENV LOCAL - loading aws profile **************');
-    let credentials = new AWS.SharedIniFileCredentials({
-      profile: process.env.LOCAL_AWSPROFILE,
-      filename: process.env.LOCAL_AWSFILENAME
-    });
-    AWS.config.credentials = credentials;
-  }
   AWS.config.update({
     region: 'us-east-1'
   });

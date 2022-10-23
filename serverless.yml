@@ -47,14 +47,12 @@ provider:
         - dynamodb:DeleteItem
       Resource: "arn:aws:dynamodb:us-east-1:*:table/*"
   environment:
-    #sqsError: ${self:custom.${opt:stage, self:provider.stage}SQS_ERROR_URL}
     s3Bucket: ${self:custom.${opt:stage, self:provider.stage}S3}
     BLOCK_SIZE: 10000
-    CURRENT_API: 'https://zzgvsvafac.execute-api.us-east-1.amazonaws.com/production'
-    STATE_MACHINE: arn:aws:states:us-east-1:529734809950:stateMachine:${self:custom.bbvaPyMEScrapingStateMachine}
+    CURRENT_API: 'https://gt47vf0wmj.execute-api.us-east-1.amazonaws.com/production'
+    BBVA_PYME_STATE_MACHINE_SCRAPING: arn:aws:states:us-east-1:529734809950:stateMachine:${self:custom.bbvaPyMEScrapingStateMachine}
     
 functions:
-  # Lambda function that load Expressjs
   main:
     timeout: 30
     handler: index.server
@@ -62,7 +60,6 @@ functions:
     events:
       - http: ANY /
       - http: 'ANY {proxy+}'
-  #lambda function that starts the state machine after been triggered by s3 created object event
   s3Trigger:
     handler: index.s3Trigger
     name: pyme-state-machine-scraping-s3Trigger
@@ -75,32 +72,31 @@ functions:
           event: s3:ObjectCreated:*
           rules:
             - suffix: .csv
-            # - prefix: uploads/
-  # lambda function BBVA PyME Scraping getDataFromInegi
   getDataGeo:
     handler: stepFunctionsHandler.getDataGeo
     name: pyme-state-machine-scraping-getDataGeo
     description: BBVA PyME Scraping getDataGeo
     timeout: 100 #
-  # lambda function BBVA PyME Scraping getDataFromInegi
   getDataFromGoogle:
     handler: stepFunctionsHandler.getDataFromGoogle
     name: pyme-state-machine-scraping-getDataFromGoogle
     description: BBVA PyME Scraping getDataFromGoogle
     timeout: 100 #
-  # lambda function BBVA PyME Scraping getDataFromInegi
   getDataFromInegi:
     handler: stepFunctionsHandler.getDataFromInegi
     name: pyme-state-machine-scraping-getDataFromInegi
     description: BBVA PyME Scraping getDataFromInegi
     timeout: 100 #
-  # lambda function BBVA PyME Scraping generateReport
+  getDataFromDataMexico:
+    handler: stepFunctionsHandler.getDataFromDataMexico
+    name: pyme-state-machine-scraping-getDataFromDataMexico
+    description: BBVA PyME Scraping getDataFromDataMexico
+    timeout: 100 #
   generateReport:
     handler: stepFunctionsHandler.generateReport
     name: pyme-state-machine-scraping-generateReport
     description: BBVA PyME Scraping generateReport
-    timeout: 900 #
-  # lambda function that runs error notification
+    timeout: 900
   fallback:
     timeout: 900
     handler: stepFunctionsHandler.fallback
@@ -142,30 +138,16 @@ stepFunctions:
               ErrorEquals: [States.TaskFailed],
               Next: fallback
             } ]
-            Next: validateGetQueryStatusLoop
-          validateGetQueryStatusLoop:
-            Type: Choice
-            Choices: [ {
-                Variable: "$.queryStatus",
-                StringEquals: "RUNNING",
-                Next: getDataFromInegi
-            },
-            {
-              Variable: "$.queryStatus",
-              StringEquals: "QUEUED",
-              Next: getDataFromInegi
-            },
-            {
-              Variable: "$.queryStatus",
-              StringEquals: "SUCCEEDED",
-              Next: generateReport
-            },
-            {
-              Variable: "$.queryStatus",
-              StringEquals: "FAILED",
+            Next: getDataFromDataMexico
+          getDataFromDataMexico:
+            Type: Task
+            Resource:
+              Fn::GetAtt: [ getDataFromInegi, Arn ]
+            Catch: [ {
+              ErrorEquals: [ States.TaskFailed ],
               Next: fallback
             } ]
-            Default: fallback
+            Next: generateReport
           generateReport:
             Type: Task
             Resource:
