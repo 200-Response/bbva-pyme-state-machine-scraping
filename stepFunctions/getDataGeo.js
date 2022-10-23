@@ -2,7 +2,7 @@
 
 const dynamoService = require('../services/dynamo')
 const AWS = require('aws-sdk')
-AWS.config.loadFromPath('./config.json')
+//AWS.config.loadFromPath('./config.json')
 const axios = require('axios');
 
 //const API_URL = 'http://localhost:3088/geocoding-api';
@@ -48,11 +48,10 @@ const getDataGeo = (params) => {
       console.log(err);
     }
 
-
     try {
       let updatedItemms = [];
 
-      for(let index = 0; index < response.length; index++) {
+      for(let index = 0; index < response?.length; index++) {
         const element = response[index];
         if (element?.data?.Item) {
           updatedItemms.push(element?.data?.Item);

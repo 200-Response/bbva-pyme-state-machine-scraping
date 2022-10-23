@@ -1,7 +1,7 @@
 const puppeteer = require("puppeteer");
 const dynamoService = require('../services/dynamo')
 const AWS = require('aws-sdk')
-AWS.config.loadFromPath('./config.json');
+//AWS.config.loadFromPath('./config.json');
 
 
 exports.run = async (req, res) => {

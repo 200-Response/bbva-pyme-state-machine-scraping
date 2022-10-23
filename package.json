@@ -18,6 +18,7 @@
     "fs": "^0.0.1-security",
     "glob": "^8.0.3",
     "googleapis": "^108.0.0",
+    "json2csv": "^5.0.7",
     "nthline": "^1.0.2",
     "puppeteer": "^19.1.0",
     "puppeteer-extra": "^3.3.4",

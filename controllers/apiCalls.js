@@ -1,7 +1,7 @@
 // 
 const dynamoService = require('../services/dynamo')
 const AWS = require('aws-sdk')
-AWS.config.loadFromPath('./config.json')
+//AWS.config.loadFromPath('./config.json')
 
 // Google Geocoding API
 const geocodingAPIURL = 'https://maps.googleapis.com'
@@ -101,7 +101,7 @@ exports.geocoding = async (req, res) => {
             await dynamoService.addItem(params)
             
             console.log("updating step");
-            //await dynamoService.addProcessCounter(processId, 'geocodingStep');
+            await dynamoService.addProcessCounter(processId, 'geocodingStep');
         })
         .catch(function (error) {
             console.log(error)
@@ -185,7 +185,9 @@ exports.denue = async (req, res) => {
         })
         .catch(function (error) {
             console.log(error)
-        })
+        });
+
+        res.send({ status: "success", Item });
 }
 
 exports.dataMexico = async (req, res) => {
@@ -211,8 +213,8 @@ exports.dataMexico = async (req, res) => {
         }
 
         let { Item } = await dynamoService.getItem(params);
-        // console.log(`CONSULTANDO DATA MEXICO ----- ${formattedURL}`)
-        axios(config)
+         console.log(`CONSULTANDO DATA MEXICO ----- ${formattedURL}`)
+        await axios(config)
             .then(function (response) {
                 if (response.status == 200) {
                     let dataMexico = response.data.data
@@ -220,10 +222,10 @@ exports.dataMexico = async (req, res) => {
                         if (estado == 'CDMX') {
                             estado = 'CIUDAD DE MEXICO'
                         }
-                        dataMexico.forEach(dmPyme => {
-                            // console.log(`Estado from dataset ${cleanText(estado)}`)
+                        dataMexico.forEach(async dmPyme => {
+                            console.log(`Estado from dataset ${cleanText(estado)}`)
                             // console.log(`Estado from Data Mexico ${cleanText(dmPyme.State)}`)
-                            // console.log(similarity(cleanText(dmPyme.State), cleanText(estado)))
+                            console.log(similarity(cleanText(dmPyme.State), cleanText(estado)))
 
                             if (similarity(cleanText(dmPyme.State), cleanText(estado)) > 0.75) {
                                 Item.data_mexico_idEstado = dmPyme['State ID']
@@ -254,8 +256,8 @@ exports.dataMexico = async (req, res) => {
                                     Item
                                 };
 
-                                dynamoService.addItem(params)
-                                dynamoService.addProcessCounter(processId, 'dataMexicoStep');
+                                await dynamoService.addItem(params)
+                                await dynamoService.addProcessCounter(processId, 'dataMexicoStep');
                             }
                         })
                     }
@@ -265,7 +267,7 @@ exports.dataMexico = async (req, res) => {
                 if (error.response) {
                     // The request was made and the server responded with a status code
                     // that falls out of the range of 2xx
-                    // console.log(error.response.data);
+                    console.log(error);
                     // console.log(error.response.status);
                     // console.log(error.response.headers);
                     return
@@ -279,7 +281,7 @@ exports.dataMexico = async (req, res) => {
                     console.log('Error', error.message);
                 }
             })
-
+        res.send({ status: "success", Item });
     }
 
 }

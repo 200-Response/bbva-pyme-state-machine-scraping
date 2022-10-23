@@ -10,7 +10,7 @@ process.env.LOCAL_AWSFILENAME = homedir+'/.aws/credentials';
 
 process.env.CURRENT_API = 'http://localhost:3088';
 
-AWS.config.loadFromPath('./config.json');
+//AWS.config.loadFromPath('./config.json');
 
 app.listen(port);
 console.log(`listening on http://localhost:${port}`);

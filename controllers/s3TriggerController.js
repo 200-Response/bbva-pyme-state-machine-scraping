@@ -61,7 +61,8 @@ exports.s3Trigger = async (key) => {
                 "googleStep": 0,
                 "inegiStep": 0,
                 "total": params.totalRows,
-                "fileName": fileName[1]
+                "fileName": fileName[1],
+                "status": "pending"
             }
             const dynamoParams = {
                    TableName: 'process',

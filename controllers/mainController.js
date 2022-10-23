@@ -93,7 +93,7 @@ exports.processChunks = async (req, res) => {
 
         console.log("***********************getcsvFileFromS3 - count rows");
         //get total rows
-        for (let index = indexRange.startAt; index <= indexRange.endAt; index++) {
+        for (let index = indexRange.startAt; index <= indexRange.startAt+5; index++) {
           const line = await readLineAndGetJson(temporalFilePath, index, "", "");
           // create jsonObject 
           let  currentObject = Object.assign( ...headersIndex.map((element, index)=>({[element]: line[index]}) )); 
@@ -157,8 +157,9 @@ exports.status = async (req, res) => {
     fileName
   } = req.body;
 
-  const result = await dynamoService.getAll('process')
-  res.send(result);
+  const { Items } = await dynamoService.getAll('process');
+
+  res.send({ csv: Items[0]?.csv, status: Items[0]?.status });
 
 };
 

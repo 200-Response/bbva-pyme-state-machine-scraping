@@ -60,6 +60,26 @@ exports.getDataFromGoogle = (event) => {
   });
 }
 
+exports.getDataFromDataMexico = (event) => {
+  console.log('method:getDataFromDataMexico()');
+  return new Promise((resolve, reject) => {
+    console.log('method:getDataFromDataMexico():step:executing:getDataFromDataMexico');
+    
+    const { getDataFromDataMexico } = require(`./stepFunctions/getDataFromDataMexico`);
+    
+    return getDataFromDataMexico(event)
+      .then(async fromResolve => {
+        console.log('method:getDataFromDataMexico():finish');
+        resolve(event);
+      })
+      .catch(err => {
+        console.log('method:getDataFromDataMexico():error:', err);
+        console.error(err);
+        reject(err);
+      });
+  });
+}
+
 exports.generateReport = (event) => {
   console.log('method:generateReport()');
   return new Promise((resolve, reject) => {
