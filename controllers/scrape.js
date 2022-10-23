@@ -13,7 +13,14 @@ exports.run = async (req, res) => {
     }
     let urlTest = `https://www.google.com.mx/maps/search/${pyme}`;
     let urlTest2 = `https://www.google.com/search?q=${pyme}`;
-    let result = await executePuppeteer(urlTest, urlTest2);
+    
+    let result;
+    try {
+        result = await executePuppeteer(urlTest, urlTest2);
+    }
+    catch(err) {
+        console.log(err);
+    }
     let params = {
         TableName: "pyme-dataset",
         Key:{
@@ -23,9 +30,9 @@ exports.run = async (req, res) => {
     }
 
     let {Item} = await dynamoService.getItem(params);
-    Item.google_score =  result.google_score;
-    Item.google_reviews = result.google_reviews;
-    Item.google_phone = result.google_phone;
+    Item.google_score =  result?.google_score;
+    Item.google_reviews = result?.google_reviews;
+    Item.google_phone = result?.google_phone;
 
     params ={
         TableName: "pyme-dataset",

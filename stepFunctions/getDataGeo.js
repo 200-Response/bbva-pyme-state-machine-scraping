@@ -35,11 +35,23 @@ const getDataGeo = (params) => {
         direccion: encodedAddress
       }
 
-      apiCalls.push(axios.post(API_URL, pymeItem));
+      //apiCalls.push(
+        try {
+          axios.post(API_URL, pymeItem)
+        } catch (error) {
+          console.log(error);
+        }
+        //);
 
     })
 
-    await Promise.all(apiCalls);
+    /*try {
+      await Promise.all(apiCalls);
+    }
+    catch(err) {
+      console.log(err);
+    }
+    */
 
     resolve(params);
 

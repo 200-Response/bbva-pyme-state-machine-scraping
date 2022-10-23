@@ -84,7 +84,12 @@ const getDataFromInegi = async (params) => {
       apiCalls.push(axios.post(API_URL, pymeItem))
     });
 
-    await Promise.all(apiCalls);
+    try {
+      await Promise.all(apiCalls);
+    }
+    catch(err){
+      console.log(err);
+    }
 
     resolve({ status: 'success' });
   });

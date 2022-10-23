@@ -151,6 +151,17 @@ exports.processChunks = async (req, res) => {
 
 };
 
+exports.status = async (req, res) => {
+  
+  const {
+    fileName
+  } = req.body;
+
+  const result = await dynamoService.getAll('process')
+  res.send(result);
+
+};
+
 function endStreamFile(file) {
   return new Promise(function (resolve, reject) {
       file.on('close', function () {

@@ -8,6 +8,7 @@ const getDataFromGoogle = (params) => {
 
     //const SCRAPE_URL = 'http://localhost:3088/scrape-google';
     const SCRAPE_URL = process.env.CURRENT_API + '/scrape-google';
+    // const SCRAPE_URL = 'http://estadiototal.com:3088/scrape-google';
 //    params:{ Items: [{unique:'asfasdf'},{type:'asdfad'},{nombre:''}]}
     const { Items, processId } = params;
 
@@ -28,7 +29,13 @@ const getDataFromGoogle = (params) => {
             apiCalls.push(axios.post(SCRAPE_URL,pymeInfo));
         });
 
-        await Promise.all(apiCalls);
+        try {
+            await Promise.all(apiCalls);
+
+        }
+        catch(err){
+            console.log(err);
+        }
 
         resolve({ status: 'success' });
     });

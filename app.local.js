@@ -15,7 +15,6 @@ AWS.config.loadFromPath('./config.json');
 app.listen(port);
 console.log(`listening on http://localhost:${port}`);
 
-
 const dynamoService = require('./services/dynamo');
 
 const getDataFromDynamoDB = async () => {
