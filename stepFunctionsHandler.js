@@ -65,7 +65,7 @@ exports.generateReport = (event) => {
   return new Promise((resolve, reject) => {
     console.log('method:generateReport():step:executing:generateReport');
     
-    const { generateReport } = require(`./stepFunctions/getDataFromGoogle`);
+    const { generateReport } = require(`./stepFunctions/generateReport`);
     
     return generateReport(event)
       .then(async fromResolve => {

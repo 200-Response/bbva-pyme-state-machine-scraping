@@ -65,6 +65,8 @@ const processId = 'asdfioweqro2341'
 const getDataFromInegi = async (params) => {
   const { Items, processId } = params;
 
+  let apiCalls = [];
+
   return new Promise(async (resolve, reject) => {
 
     Items.forEach((pyme) => {
@@ -79,8 +81,11 @@ const getDataFromInegi = async (params) => {
         geocoding_lat: pyme.geocoding_lat,
         geocoding_long: pyme.geocoding_long
       }
-      axios.post(API_URL, pymeItem)
+      
+      apiCalls.push( axios.post(API_URL, pymeItem) )
     });
+
+    await Promise.all(apiCalls);
 
     resolve({ status: 'success' });
   });

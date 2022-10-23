@@ -1,6 +1,6 @@
 'use strict';
 
-const generateReport = (params) => {
+const getDataFromDataMexico = (params) => {
 
     return new Promise(async (resolve, reject) => {
         
@@ -11,5 +11,5 @@ const generateReport = (params) => {
 }
 
 module.exports = {
-    generateReport
+    getDataFromDataMexico
 }

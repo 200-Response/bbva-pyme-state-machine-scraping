@@ -11,20 +11,25 @@ const getDataFromGoogle = (params) => {
 //    params:{ Items: [{unique:'asfasdf'},{type:'asdfad'},{nombre:''}]}
     const { Items, processId } = params;
 
+    let apiCalls = [];
+
     return new Promise(async (resolve, reject) => {
         Items.forEach((pyme) => {
             let pymeInfo ={
                 processId,
                 unique: pyme.unique,
                 type: pyme.type,
-                pyme: pyme.NombComp.replaceAll(" ","+").replaceAll(",","").replaceAll("++","+"),
+                pyme: pyme.NombComp?.replaceAll(" ","+")?.replaceAll(",","")?.replaceAll("++","+"),
                 nombre:  pyme.NombComp,
                 direccion1: pyme.Direccion1,
                 estado: pyme.Estado
             };
             console.log('peticion ',SCRAPE_URL, pyme.unique);
-            axios.post(SCRAPE_URL,pymeInfo);
+            apiCalls.push(axios.post(SCRAPE_URL,pymeInfo));
         });
+
+        await Promise.all(apiCalls);
+
         resolve({ status: 'success' });
     });
 }

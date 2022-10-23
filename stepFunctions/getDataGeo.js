@@ -6,11 +6,11 @@ AWS.config.loadFromPath('./config.json')
 const axios = require('axios');
 
 //const API_URL = 'http://localhost:3088/geocoding-api';
-const API_URL = process.env.SCRAPE_URL + '/geocoding-api';
 
 const processId = 'asdfioweqro2341'
 
 const getDataGeo = (params) => {
+  const API_URL = process.env.CURRENT_API + '/geocoding-api';
 
   return new Promise(async (resolve, reject) => {
     
