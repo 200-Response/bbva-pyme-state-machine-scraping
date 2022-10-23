@@ -31,7 +31,7 @@ exports.fallback = (params) => {
         "client": params.client,
         "error_message": 'Error Alert:\n' + JSON.stringify(params),
         "url": 'error handler',
-        "service": "DMC CRMID Upload"
+        "service": "Upload"
       };
 
       console.log(messageParams);

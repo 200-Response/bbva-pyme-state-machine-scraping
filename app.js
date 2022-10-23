@@ -3,12 +3,8 @@
 //=================== Modules
 const express = require('express'),
   app = express(),
-  fs = require('fs'),
-  path = require('path'),
   bodyParser = require('body-parser'),
   cors = require('cors');
-
-let router = express.Router();
 
 app.use(cors());
 app.use(bodyParser.json());
@@ -24,22 +20,6 @@ app.get('/app/status', (req, res) => {
 });
 
 ////////********Require My Routes***************////////
-let recursiveRoutes = (folderName) => {
-
-  fs.readdirSync(folderName).forEach((file) => {
-
-    let fullName = path.join(folderName, file);
-    let stat = fs.lstatSync(fullName);
-
-    if (stat.isDirectory()) {
-      recursiveRoutes(fullName);
-    } else if (file.toLowerCase().indexOf('.js')) {
-      require('./' + fullName)(app);
-    }
-  });
-
-};
-
-recursiveRoutes('routes');
+require('./routes/default')(app);
 
 module.exports = app;

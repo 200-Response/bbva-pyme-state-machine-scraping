@@ -2,14 +2,9 @@
 const s3 = require('../services/s3');
 
 const uniqid = require('uniqid');
-//const moment = require('moment');
-//const AWS = require('aws-sdk');
 const fs = require('fs');
 const nthline = require('nthline');
-//const csv = require('csvtojson');
 const axios = require('axios');
-
-let stepfunctions;
 
 exports.s3Trigger = async (key) => {
     //stepfunctions = new AWS.StepFunctions();
@@ -36,8 +31,8 @@ exports.s3Trigger = async (key) => {
       
       const currentDate = new Date();
       params.uniqueId = currentDate.toISOString().split('T')[0] + "-" + uniqid();
-      params.processId = uniqueId;
-      
+      params.processId = params.uniqueId;
+
       let file = fs.createWriteStream(temporalFilePath);
         
       s3.getS3ObjectAndcreateReadStream(process.env.s3Bucket, key, file);
@@ -56,14 +51,7 @@ exports.s3Trigger = async (key) => {
         .then(async (fromResolve) => {
             console.log("***********************getcsvFileFromS3 - done", fromResolve);
             //validate the headers index
-            /*if (!((typeof fromResolve[params.email] !== 'undefined') && (typeof fromResolve[params.id] !== 'undefined') && (fromResolve[params.email] >= 0) && (fromResolve[params.id] >= 0))) {
-            params.complete = "error";
-            params.errors.push("Invalid headers - email: " + params.email + " crmid: " + params.id);
-            params.processedRows = params.totalRows;
-            params.invalidRecords = params.totalRows;
-            params.invalidRecordsUrl = "#";
-            }
-            */
+            
             params.headersIndex = fromResolve;
 
             // Calculate chunks size

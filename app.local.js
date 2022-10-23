@@ -9,16 +9,6 @@ process.env.LOCAL_AWSPROFILE = 'bbva2022';
 process.env.LOCAL_AWSFILENAME = homedir+'/.aws/credentials';
 
 process.env.CURRENT_API = 'http://localhost:3088';
-/*
-var credentials = new AWS.SharedIniFileCredentials({
-	profile: process.env.LOCAL_AWSPROFILE,
-	filename: process.env.LOCAL_AWSFILENAME
-});
-AWS.config.credentials = credentials;
-AWS.config.update({
-	region: 'us-east-1'
-});
-*/
 
 AWS.config.loadFromPath('./config.json');
 
