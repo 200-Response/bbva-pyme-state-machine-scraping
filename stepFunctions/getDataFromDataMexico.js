@@ -10,11 +10,6 @@ const API_URL = 'http://localhost:3088/data-mexico-api';
 // HTTP Request
 var axios = require('axios')
 
-function cleanText(str) {
-    return String(str).normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^\w\s]/gi, '').replace('  ', '-').replace(' ', '-').toLocaleLowerCase()
-}
-
-
 const processId = 'asdfioweqro2341'
 
 
@@ -40,15 +35,32 @@ const getDataFromDynamoDB = async () => {
         })
 }
 
-getDataFromDynamoDB()
+// getDataFromDynamoDB()
 
 'use strict';
 
 const getDataFromDataMexico = (params) => {
 
     return new Promise(async (resolve, reject) => {
-        
-        // lògica aquì
+
+        let apiCalls = [];
+
+        params.Items.forEach(async (pyme) => {
+            let pymeClee = pyme.data_inegi_CLEE || ''
+            let pymeEstado = (String(pyme.Estado)) || ''
+            let pymeItem = {
+                processId,
+                unique: pyme.unique,
+                type: pyme.type,
+                CLEE: pymeClee,
+                estado: pymeEstado
+            }
+
+            apiCalls.push(axios.post(API_URL, pymeItem));
+
+        })
+
+        await Promise.all(apiCalls);
 
         resolve(params);
     });
