@@ -94,6 +94,12 @@ functions:
     name: pyme-state-machine-scraping-getDataFromInegi
     description: BBVA PyME Scraping getDataFromInegi
     timeout: 100 #
+  # lambda function BBVA PyME Scraping getDataFromDataMexico
+  getDataFromDataMexico:
+    handler: stepFunctionsHandler.getDataFromDataMexico
+    name: pyme-state-machine-scraping-getDataFromDataMexico
+    description: BBVA PyME Scraping getDataFromDataMexico
+    timeout: 100 #
   # lambda function BBVA PyME Scraping generateReport
   generateReport:
     handler: stepFunctionsHandler.generateReport
@@ -140,6 +146,15 @@ stepFunctions:
               Fn::GetAtt: [getDataFromInegi, Arn]
             Catch: [ {
               ErrorEquals: [States.TaskFailed],
+              Next: fallback
+            } ]
+            Next: getDataFromDataMexico
+          getDataFromDataMexico:
+            Type: Task
+            Resource:
+              Fn::GetAtt: [ getDataFromInegi, Arn ]
+            Catch: [ {
+              ErrorEquals: [ States.TaskFailed ],
               Next: fallback
             } ]
             Next: validateGetQueryStatusLoop
